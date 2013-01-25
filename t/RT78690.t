@@ -82,31 +82,37 @@ my $c = ['C'];
 is_deeply(
 	$o->m1($c),
 	{ '$self' => $o, '$c' => $c, '@_' => [] },
+	"Fairly normal usage of a method with two invocants",
 );
 
 is_deeply(
 	$o->m1($c, 1),
 	{ '$self' => $o, '$c' => $c, '@_' => [1] },
+	"Usage of a method with two invocants, and extra parameter",
 );
 
 is_deeply(
 	$o->m1(),
 	{ '$self' => $o, '$c' => undef, '@_' => [] },
+	"Usage of a method with two invocants, forgetting second invocant (doesn't complain, just undef)",
 );
 
 is_deeply(
 	$o->m2($c, 1),
 	{ '$self' => $o, '$c' => $c, '@_' => [1], '$p1' => 1 },
+	"Fairly normal usage of a method with two invocants, plus a named parameter",
 );
 
 is_deeply(
 	$o->m3($c, 1),
 	{ '$c' => 'outer-scope', '$self' => $o, '@_' => [$c, 1], '$p1' => $c },
+	"Explicit proto invocants override two invocant keyword to take one invocant",
 );
 
 is_deeply(
 	$o->m4($c, 99, 1),
 	{ '$c' => 'outer-scope', '$this' => $o, '$k' => $c, '$j' => 99, '@_' => [1], '$p1' => 1 },
+	"Explicit proto invocants override two invocant keyword to take three invocants",
 );
 
 
