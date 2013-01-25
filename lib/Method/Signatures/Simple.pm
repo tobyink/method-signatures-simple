@@ -28,16 +28,16 @@ sub import {
     # we only install keywords that are requested
     if (defined $meth) {
         $class->install_methodhandler(
-        name     => $meth,
-        invocant => '$self',
-        %opts,
+          name     => $meth,
+          invocant => ['$self'],
+          %opts,
         );
     }
     if (defined $func) {
         $class->install_methodhandler(
           name     => $func,
           %opts,
-          invocant => undef,
+          invocant => [],
         );
     }
 }
@@ -74,10 +74,18 @@ sub parse_proto {
     $proto =~ s/[\r\n]//g;
     my $invocant = $self->{invocant};
 
-    $invocant = $1 if $proto =~ s{(\$\w+)\s*:\s*}{};
-
+    if ($proto =~ s{(\$\w+)((?:\s*,\s*\$\w+)*)\s*:\s*}{}) {
+      $invocant = defined $2 ? [split /,/, "$1 $2"] : [$1];
+      for (@$invocant) {
+        s/^\s+//mg;
+        s/\s+$//mg;
+      }
+    }
+    $invocant = [] unless defined $invocant;
+    $invocant = [$invocant] unless ref $invocant eq 'ARRAY';
+    
     my $inject = '';
-    $inject .= "my ${invocant} = shift;" if $invocant;
+    $inject .= "my $_ = shift;" for @{$invocant};
     $inject .= "my ($proto) = \@_;"      if defined $proto and length $proto;
     $inject .= '();'; # fix for empty method body
 
@@ -189,6 +197,20 @@ changes affect the current scope.
 
     # and this of course still works:
     method z ($self:) { $self->{z} }
+
+=item * multiple invocants
+
+    use Method::Signatures::Simple
+      method_keyword => 'action',
+      invocant       => ['$self', '$c'];
+
+    action context_get ($key) {
+      $c->{ref $self}{$key}
+    }
+    
+    action context_set ($this, $c: $key, $val) {
+      $c->{ref $self}{$key} = $val;
+    }
 
 =item * change the keywords
 
